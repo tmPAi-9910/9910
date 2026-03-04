@@ -1,10 +1,14 @@
 """
 TmpAi Standard 1.0
+
+A large language model (LLM) framework inspired by Claude Opus 4.6,
+focusing on enhanced comprehension, contextual awareness, and user engagement.
 """
 
 __version__ = "1.0.0"
 __author__ = "tmPAi-9910"
 
-from tmpai.src.core.model import TmpAiModel, model_size
+# Import from new models directory
+from tmpai.models import TmpAiModel, model_size, BaseModel, ModelConfig
 
-__all__ = ['TmpAiModel', 'model_size']
+__all__ = ['TmpAiModel', 'model_size', 'BaseModel', 'ModelConfig']

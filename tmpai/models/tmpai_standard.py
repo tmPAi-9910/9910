@@ -1,5 +1,8 @@
 """
 TmpAi Standard 1.0 - Core Architecture Module
+
+The original TmpAi model with transformer-based architecture and
+enhanced context retention mechanisms.
 """
 
 import torch
@@ -7,6 +10,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from typing import Optional, Tuple, Dict, Any
 import math
+
+from tmpai.models.base import BaseModel, ModelConfig
 
 
 class MultiHeadAttention(nn.Module):
@@ -163,7 +168,7 @@ class TransformerBlock(nn.Module):
         return x, new_cache
 
 
-class TmpAiModel(nn.Module):
+class TmpAiModel(BaseModel):
     """
     TmpAi Standard 1.0 - Main Model Architecture
     
@@ -181,53 +186,53 @@ class TmpAiModel(nn.Module):
         max_seq_len: int = 8192,
         dropout: float = 0.1,
         use_context_retention: bool = True,
-        pad_token_id: int = 0
+        pad_token_id: int = 0,
+        config: Optional[ModelConfig] = None
     ):
-        super().__init__()
-        self.vocab_size = vocab_size
-        self.embed_dim = embed_dim
-        self.num_layers = num_layers
-        self.max_seq_len = max_seq_len
-        self.pad_token_id = pad_token_id
+        if config is None:
+            config = ModelConfig(
+                vocab_size=vocab_size,
+                embed_dim=embed_dim,
+                num_layers=num_layers,
+                num_heads=num_heads,
+                ff_dim=ff_dim,
+                max_seq_len=max_seq_len,
+                dropout=dropout,
+                pad_token_id=pad_token_id
+            )
+        
+        super().__init__(config)
+        
+        self.use_context_retention = use_context_retention
+        self.ff_dim = ff_dim
         
         # Token and position embeddings
-        self.token_embedding = nn.Embedding(vocab_size, embed_dim)
-        self.position_embedding = nn.Embedding(max_seq_len, embed_dim)
+        self.token_embedding = nn.Embedding(config.vocab_size, config.embed_dim)
+        self.position_embedding = nn.Embedding(config.max_seq_len, config.embed_dim)
         
         # Transformer blocks
         self.blocks = nn.ModuleList([
-            TransformerBlock(embed_dim, num_heads, ff_dim, dropout, use_context_retention)
-            for _ in range(num_layers)
+            TransformerBlock(
+                config.embed_dim,
+                config.num_heads,
+                config.ff_dim,
+                config.dropout,
+                use_context_retention
+            )
+            for _ in range(config.num_layers)
         ])
         
         # Output projection
-        self.norm_out = nn.LayerNorm(embed_dim)
-        self.output_projection = nn.Linear(embed_dim, vocab_size, bias=False)
+        self.norm_out = nn.LayerNorm(config.embed_dim)
+        self.output_projection = nn.Linear(config.embed_dim, config.vocab_size, bias=False)
         
         # Tie output projection with token embedding for efficiency
         self.output_projection.weight = self.token_embedding.weight
         
-        self.dropout = nn.Dropout(dropout)
+        self.dropout = nn.Dropout(config.dropout)
         
         # Initialize weights
         self._init_weights()
-    
-    def _init_weights(self):
-        """Initialize model weights following best practices."""
-        for module in self.modules():
-            if isinstance(module, nn.Linear):
-                torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
-                if module.bias is not None:
-                    torch.nn.init.zeros_(module.bias)
-            elif isinstance(module, nn.Embedding):
-                torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
-            elif isinstance(module, nn.LayerNorm):
-                torch.nn.init.ones_(module.weight)
-                torch.nn.init.zeros_(module.bias)
-    
-    def create_attention_mask(self, seq_len: int, device: torch.device) -> torch.Tensor:
-        """Create causal attention mask."""
-        return torch.tril(torch.ones(seq_len, seq_len, device=device))
     
     def forward(
         self,
@@ -351,12 +356,4 @@ class TmpAiModel(nn.Module):
 
 def model_size(model: TmpAiModel) -> Dict[str, Any]:
     """Calculate model size statistics."""
-    param_count = sum(p.numel() for p in model.parameters())
-    trainable_count = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    
-    return {
-        'total_parameters': param_count,
-        'trainable_parameters': trainable_count,
-        'parameter_count_str': f'{param_count:,}',
-        'model_size_gb': param_count * 4 / (1024**3)  # Assuming float32
-    }
+    return model.get_model_info()

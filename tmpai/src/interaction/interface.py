@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 from collections import defaultdict, deque
 
-from tmpai.src.core.model import TmpAiModel
+from tmpai.models import TmpAiModel
 
 
 @dataclass

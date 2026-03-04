@@ -11,7 +11,7 @@ from pathlib import Path
 import json
 from collections import defaultdict
 
-from tmpai.src.core.model import TmpAiModel
+from tmpai.models import TmpAiModel
 
 
 @dataclass

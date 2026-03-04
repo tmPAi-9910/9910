@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 from datetime import datetime
 
-from tmpai.src.core.model import TmpAiModel
+from tmpai.models import TmpAiModel
 
 
 class EvaluationMetrics:
