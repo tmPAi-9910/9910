@@ -229,18 +229,22 @@ Core principles:
 
 ```
 tmpai/
+├── models/                # Model implementations
+│   ├── base.py            # Base model class and configuration
+│   ├── tmpai_standard.py  # TmpAi Standard 1.0 model
+│   └── __init__.py        # Models module exports
 ├── src/
-│   ├── core/              # Model architecture
+│   ├── core/              # Core architecture components (re-exports from models)
 │   ├── training/          # Training methodology
 │   ├── evaluation/        # Evaluation metrics
 │   ├── interaction/       # User interaction layer
-│   ├── safety/           # Ethics and safety
-│   └── deployment/       # Deployment configuration
-├── docs/                 # Documentation
-├── config/              # Configuration files
-├── data/                # Training data
-├── checkpoints/         # Model checkpoints
-└── requirements.txt     # Python dependencies
+│   ├── safety/            # Ethics and safety
+│   └── deployment/        # Deployment configuration
+├── docs/                  # Documentation
+├── config/                # Configuration files
+├── data/                  # Training data
+├── checkpoints/           # Model checkpoints
+└── requirements.txt       # Python dependencies
 ```
 
 ## Getting Started

@@ -15,7 +15,7 @@
 
 ### Model Architecture
 
-TmpAi Standard 1.0 uses a transformer-based architecture with enhanced context retention mechanisms:
+TmpAi Standard 1.0 uses a transformer-based architecture with enhanced context retention mechanisms. The model implementations are organized in the `tmpai/models/` directory:
 
 - **Embedding Dimension**: 4096
 - **Layers**: 32 transformer blocks
@@ -23,7 +23,23 @@ TmpAi Standard 1.0 uses a transformer-based architecture with enhanced context r
 - **Feed-Forward Dimension**: 16384
 - **Maximum Sequence Length**: 8192 tokens
 
+### Model Structure
+
+```
+tmpai/models/
+├── base.py            # Abstract base class (BaseModel) and ModelConfig
+├── tmpai_standard.py  # TmpAi Standard 1.0 implementation
+└── __init__.py        # Module exports
+```
+
 ### Key Components
+
+#### BaseModel
+
+All models inherit from `BaseModel`, which defines:
+- Common model configuration via `ModelConfig`
+- Abstract methods: `forward()` and `generate()`
+- Shared utility methods like `create_attention_mask()` and `get_model_info()`
 
 #### Multi-Head Attention with Context Retention
 
@@ -42,10 +58,10 @@ A specialized layer that:
 ### Usage
 
 ```python
-from tmpai import TmpAiModel
+from tmpai import TmpAiModel, BaseModel, ModelConfig
 import torch
 
-# Initialize model
+# Initialize model with explicit parameters
 model = TmpAiModel(
     vocab_size=50000,
     embed_dim=4096,
@@ -53,6 +69,16 @@ model = TmpAiModel(
     num_heads=32,
     max_seq_len=8192
 )
+
+# Or using ModelConfig
+config = ModelConfig(
+    vocab_size=50000,
+    embed_dim=4096,
+    num_layers=32,
+    num_heads=32,
+    max_seq_len=8192
+)
+model = TmpAiModel(config=config)
 
 # Move to device
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -478,6 +504,133 @@ training:
 - Train on more data
 - Adjust temperature and sampling parameters
 - Fine-tune on domain-specific data
+
+---
+
+## Creating Custom Models
+
+The framework supports adding new model implementations by inheriting from `BaseModel`:
+
+### Step 1: Create a New Model File
+
+Create a new file in `tmpai/models/` (e.g., `tmpai/models/custom_model.py`):
+
+```python
+"""
+Custom Model Implementation
+"""
+
+import torch
+import torch.nn as nn
+from typing import Optional, Dict, Any
+
+from tmpai.models.base import BaseModel, ModelConfig
+
+
+class CustomModel(BaseModel):
+    """
+    A custom model implementation.
+    
+    Inherit from BaseModel and implement the required abstract methods.
+    """
+    
+    def __init__(self, config: Optional[ModelConfig] = None, **kwargs):
+        if config is None:
+            config = ModelConfig(**kwargs)
+        super().__init__(config)
+        
+        # Initialize your custom layers
+        self.custom_layer = nn.Linear(config.embed_dim, config.embed_dim)
+        
+        self._init_weights()
+    
+    def forward(
+        self,
+        input_ids: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        cache: Optional[Dict[int, Dict[str, torch.Tensor]]] = None,
+        use_cache: bool = False
+    ) -> Dict[str, torch.Tensor]:
+        """
+        Forward pass implementation.
+        
+        Args:
+            input_ids: Input token IDs [batch, seq_len]
+            attention_mask: Optional attention mask
+            cache: Optional cached states
+            use_cache: Whether to return cache
+        
+        Returns:
+            Dictionary with 'logits' and optionally 'cache'
+        """
+        # Implement forward logic
+        logits = self.custom_layer(input_ids.float())
+        
+        return {
+            'logits': logits,
+            'cache': None
+        }
+    
+    @torch.no_grad()
+    def generate(
+        self,
+        input_ids: torch.Tensor,
+        max_new_tokens: int = 100,
+        temperature: float = 1.0,
+        top_k: Optional[int] = None,
+        top_p: float = 1.0,
+        do_sample: bool = True,
+        repetition_penalty: float = 1.0
+    ) -> torch.Tensor:
+        """
+        Generate text autoregressively.
+        
+        Args:
+            input_ids: Input token IDs
+            max_new_tokens: Maximum new tokens to generate
+            temperature: Sampling temperature
+            top_k: Top-k sampling
+            top_p: Nucleus sampling
+            do_sample: Whether to sample
+            repetition_penalty: Repetition penalty
+        
+        Returns:
+            Generated token IDs
+        """
+        self.eval()
+        # Implement generation logic
+        return input_ids
+```
+
+### Step 2: Export the Model
+
+Add the import to `tmpai/models/__init__.py`:
+
+```python
+from tmpai.models.custom_model import CustomModel
+
+__all__ = [
+    'BaseModel',
+    'ModelConfig',
+    'TmpAiModel',
+    'model_size',
+    'CustomModel'  # Add your model here
+]
+```
+
+### Step 3: Use the Model
+
+```python
+from tmpai import CustomModel, ModelConfig
+
+# Create model
+config = ModelConfig(vocab_size=50000, embed_dim=512)
+model = CustomModel(config)
+
+# Use with framework components
+from tmpai.src.training import Trainer
+trainer = Trainer(model)
+```
 
 ---
 

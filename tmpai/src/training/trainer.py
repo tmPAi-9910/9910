@@ -13,7 +13,7 @@ import json
 from datetime import datetime
 from collections import deque
 
-from tmpai.src.core.model import TmpAiModel
+from tmpai.models import TmpAiModel
 
 
 class TextDataset(Dataset):
