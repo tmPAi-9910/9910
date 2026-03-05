@@ -4,12 +4,13 @@ TmpAi Standard 1.0 - Training Methodology Module
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
 from typing import Dict, Any, Optional, List, Tuple
 import numpy as np
 from pathlib import Path
-import json
+import math
 from datetime import datetime
 from collections import deque
 
@@ -596,7 +597,3 @@ class Trainer:
         self.best_loss = checkpoint['best_loss']
         self.training_history = checkpoint['training_history']
         print(f"Loaded checkpoint from {path}")
-
-
-import math
-import torch.nn.functional as F
